@@ -1,6 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind CSS base styles */
+@import 'tailwindcss/base';
+
+/* Tailwind CSS component styles */
+@import 'tailwindcss/components';
+
+/* Tailwind CSS utility styles */ 
+@import 'tailwindcss/utilities';
 
 /* Add emoji font support */
 @font-face {
@@ -241,6 +246,7 @@ body {
   --scrollbar-thumb: #cbd5e1;
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.2);
   --scrollbar-track: transparent;
+  --spinner-color: #475569;  /* slate-600 for light mode */
 }
 
 /* Dark mode styles */
@@ -262,6 +268,7 @@ body {
   --scrollbar-thumb: #475569;
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
   --scrollbar-track: transparent;
+  --spinner-color: #9ca3af;  /* gray-400 for dark mode */
 
   /* Dark mode login page */
   .login-container {
@@ -611,4 +618,23 @@ textarea.custom-scrollbar[style*="overflow-y: auto"] {
 
 .dark {
   --hover-bg: rgba(255, 255, 255, 0.05);
+}
+
+@keyframes typingDot {
+  0%, 100% { opacity: 0.2; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+
+.animate-typing-dot1 {
+  animation: typingDot 1s infinite;
+}
+
+.animate-typing-dot2 {
+  animation: typingDot 1s infinite;
+  animation-delay: 0.2s;
+}
+
+.animate-typing-dot3 {
+  animation: typingDot 1s infinite;
+  animation-delay: 0.4s;
 } 

@@ -36,7 +36,6 @@ export default function Chatroom() {
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set())
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([])
   const [showSettings, setShowSettings] = useState(false)
-  const [showCopyNotification, setShowCopyNotification] = useState(false)
   const [avatarColor, setAvatarColor] = useState<string>('#3B82F6')
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -53,7 +52,6 @@ export default function Chatroom() {
     }
     return 'dark'
   })
-  const [showOnlineUsers, setShowOnlineUsers] = useState(false)
   const [showUserInfo, setShowUserInfo] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -341,17 +339,18 @@ export default function Chatroom() {
       console.error('Error sending message:', error)
     } else {
       setReplyingTo(null)
-      chatRef.current?.scrollToBottom()
     }
   }
 
   const handleCopy = (content: string) => {
     navigator.clipboard.writeText(content)
       .then(() => {
-        setShowCopyNotification(true)
-        setTimeout(() => setShowCopyNotification(false), 2000)
+        showNotification(t('messageCopied'))
       })
-      .catch(err => console.error('Failed to copy:', err))
+      .catch(err => {
+        console.error('Failed to copy:', err)
+        showNotification('Failed to copy message', 'error')
+      })
   }
 
   const handleTyping = () => {
@@ -457,7 +456,10 @@ export default function Chatroom() {
   }
 
   if (loading) return <LoadingScreen />
-  if (!user) return <Login onLogin={setUser} />
+  if (!user) return <Login onLogin={(user) => {
+    setUser(user);
+    setAvatarColor(user.avatarColor || '#3B82F6');
+  }} />
 
   return (
     <div className="flex h-screen chat-container overflow-x-hidden">
@@ -603,8 +605,8 @@ export default function Chatroom() {
             onCancelReply={() => setReplyingTo(null)}
             onTyping={handleTyping}
             theme={theme}
-            typingUsers={typingUsers}
             showNotification={showNotification}
+            typingUsers={typingUsers}
           />
         </div>
       </div>

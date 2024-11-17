@@ -48,24 +48,21 @@ const Chat = forwardRef<ChatRef, ChatProps>(({
     // Check if messages were added
     const messagesAdded = messages.length > prevMessagesLengthRef.current
     
-    // Calculate if we're near bottom before any updates
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
-    
     // More accurate way to detect if we're loading older messages
     const isLoadingOlder = messagesAdded && 
       messages.length > prevMessagesLengthRef.current && 
-      messages[0]?.id !== prevFirstMessageId.current &&
-      !isNearBottom
+      messages[0]?.id !== prevFirstMessageId.current
 
     if (messagesAdded && !isLoadingOlder) {
-      // Only auto-scroll if we were already near the bottom
-      if (isNearBottom) {
-        requestAnimationFrame(() => {
-          if (container) {
-            container.scrollTop = container.scrollHeight
-          }
-        })
-      }
+      // Scroll to bottom after new messages are added
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+          })
+        }
+      })
     } else if (isLoadingOlder && currentScrollHeight !== prevScrollHeightRef.current) {
       // Maintain scroll position when loading older messages
       const scrollDiff = currentScrollHeight - prevScrollHeightRef.current
@@ -118,8 +115,13 @@ const Chat = forwardRef<ChatRef, ChatProps>(({
     >
       {/* Loading indicator */}
       {isLoadingMore && (
-        <div className="flex justify-center p-4">
-          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="flex justify-center py-4">
+          <div className="w-6 h-6 border-2 rounded-full border-t-transparent animate-spin"
+            style={{ 
+              borderColor: 'var(--text-secondary)',
+              borderTopColor: 'transparent'
+            }} 
+          />
         </div>
       )}
 

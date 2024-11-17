@@ -12,8 +12,8 @@ interface MessageInputProps {
   onCancelReply: () => void
   onTyping: () => void
   theme: 'dark' | 'light'
+  showNotification: (message: string, type?: 'success' | 'error') => void
   typingUsers: Set<string>
-  showNotification: (message: string, type: 'success' | 'error') => void
 }
 
 export default function MessageInput({
@@ -23,8 +23,8 @@ export default function MessageInput({
   onCancelReply,
   onTyping,
   theme,
-  typingUsers,
-  showNotification
+  showNotification,
+  typingUsers
 }: MessageInputProps) {
   const { t } = useTranslation('common')
   const [message, setMessage] = useState('')
@@ -61,23 +61,36 @@ export default function MessageInput({
   const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = e.target
     const value = textarea.value
-    const lineHeight = 40 // Height of one line in pixels
-    const maxLines = 5 // Maximum number of lines allowed
     
-    // Count the number of lines
+    // Get the computed styles
+    const computedStyle = window.getComputedStyle(textarea)
+    const paddingTop = parseInt(computedStyle.paddingTop)
+    const paddingBottom = parseInt(computedStyle.paddingBottom)
+    const lineHeight = parseInt(computedStyle.lineHeight) || 20 // Get actual line height or fallback
+    const maxLines = 5
+
+    // Reset height to recalculate scrollHeight
+    textarea.style.height = 'auto'
+
+    // Count actual number of lines by splitting on newlines
     const lines = value.split('\n').length
-    const longLineBreaks = value.split(/[^\n]{40,}/g).length - 1
-    const totalLines = Math.min(lines + longLineBreaks, maxLines)
-    
+    const totalLines = Math.max(
+      lines,
+      Math.ceil((textarea.scrollHeight - paddingTop - paddingBottom) / lineHeight)
+    )
+
     if (!value.trim()) {
+      // Reset to single line if empty
       textarea.style.height = `${lineHeight}px`
       textarea.style.overflowY = 'hidden'
     } else {
-      const newHeight = lineHeight * totalLines
+      // Set height based on content lines, capped at maxLines
+      const clampedLines = Math.min(totalLines, maxLines)
+      const newHeight = (clampedLines * lineHeight) + paddingTop + paddingBottom
       textarea.style.height = `${newHeight}px`
-      textarea.style.overflowY = totalLines >= maxLines ? 'auto' : 'hidden'
+      textarea.style.overflowY = totalLines > maxLines ? 'auto' : 'hidden'
     }
-    
+
     setMessage(value)
     onTyping()
   }
@@ -132,9 +145,24 @@ export default function MessageInput({
 
   return (
     <div className="p-4 bg-[var(--bg-secondary)] border-t border-[var(--border-color)]">
+      {/* Typing indicator - updated to match reply preview style */}
+      {typingUsers.size > 0 && (
+        <div className="mb-4 flex items-center gap-2 text-sm text-[var(--text-secondary)] animate-fade-in-down">
+          <div className="flex items-center gap-1">
+            <span className="w-1 h-1 bg-[var(--text-secondary)] rounded-full animate-typing-dot1"></span>
+            <span className="w-1 h-1 bg-[var(--text-secondary)] rounded-full animate-typing-dot2"></span>
+            <span className="w-1 h-1 bg-[var(--text-secondary)] rounded-full animate-typing-dot3"></span>
+          </div>
+          <span className="flex-1 truncate">
+            <span className="font-medium">{Array.from(typingUsers).join(', ')}</span>
+            <span> {t('typing')}</span>
+          </span>
+        </div>
+      )}
+
       {/* Reply preview */}
       {replyingTo && (
-        <div className="mb-2 flex items-center gap-2 text-sm text-[var(--text-secondary)] animate-fade-in-down">
+        <div className="mb-4 flex items-center gap-2 text-sm text-[var(--text-secondary)] animate-fade-in-down">
           <svg className="w-4 h-4 rotate-180" fill="currentColor" viewBox="0 0 24 24">
             <path d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"></path>
           </svg>

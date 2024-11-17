@@ -4,7 +4,7 @@ import { useTranslation } from 'next-i18next'
 import { useRouter } from 'next/router'
 
 interface LoginProps {
-  onLogin: (user: { id: string; email: string; username: string }) => void
+  onLogin: (user: { id: string; email: string; username: string; avatarColor?: string }) => void
 }
 
 export default function Login({ onLogin }: LoginProps) {
@@ -52,6 +52,10 @@ export default function Login({ onLogin }: LoginProps) {
           }
           if (authError.message.includes('email')) {
             setError('invalidEmail')
+            return
+          }
+          if (authError.message.includes('registered')) {
+            setError('usernameInUse')
             return
           }
           setError('unknownError')
@@ -107,6 +111,7 @@ export default function Login({ onLogin }: LoginProps) {
             id: authData.user.id,
             email: authData.user.email!,
             username: username,
+            avatarColor: '#3B82F6'
           })
         }
       } else {
@@ -155,6 +160,7 @@ export default function Login({ onLogin }: LoginProps) {
             id: authData.user.id,
             email: authData.user.email!,
             username: profileData.username,
+            avatarColor: profileData.avatar_color || '#3B82F6'
           })
         }
       }
