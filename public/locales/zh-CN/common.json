@@ -72,5 +72,6 @@
   "systemSettings": "系统",
   "theme": "主题",
   "light": "明亮",
-  "dark": "深色"
+  "dark": "深色",
+  "fileTooBig": "文件太大。最大大小为10MB"
 } 

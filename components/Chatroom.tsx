@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../lib/supabaseClient'
 import { useTranslation } from 'next-i18next'
 import { useRouter } from 'next/router'
-import { Message, OnlineUser, User, ColorOption } from './chat/types'
-import Login from './Login'
-import LoadingScreen from './chat/LoadingScreen'
-import LeftSidebar from './chat/LeftSidebar'
-import RightSidebar from './chat/RightSidebar'
-import Chat from './chat/Chat'
-import MessageInput from './chat/MessageInput'
-import Settings from './chat/Settings'
-import UserInfo from './chat/UserInfo'
-import type { Database } from '../lib/database.types'
+import { supabase } from '@/lib/supabaseClient'
+import type { Database } from '@/types/database.types'
+import { Message, OnlineUser, User, ColorOption } from '@/components/chat/types'
+import Login from '@/components/Login'
+import LoadingScreen from '@/components/chat/LoadingScreen'
+import LeftSidebar from '@/components/chat/LeftSidebar'
+import RightSidebar from '@/components/chat/RightSidebar'
+import Chat, { ChatRef } from '@/components/chat/Chat'
+import MessageInput from '@/components/chat/MessageInput'
+import Settings from '@/components/chat/Settings'
+import UserInfo from '@/components/chat/UserInfo'
 
 const colorOptions: ColorOption[] = [
   { name: 'Blue', value: '#3B82F6' },
@@ -23,29 +23,12 @@ const colorOptions: ColorOption[] = [
   { name: 'Indigo', value: '#6366F1' },
 ]
 
-// Add this type to handle the database response
-type MessageWithProfiles = {
-  id: string
-  content: string
-  created_at: string
-  user_id: string
-  reply_to: {
-    id: string
-    content: string
-    user_name: string
-  } | null
-  user_profiles: {
-    username: string
-    avatar_color: string
-  } | null
-}
-
 export default function Chatroom() {
   const { t } = useTranslation('common')
   const router = useRouter()
   const channelRef = useRef<any>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
-  const activityCheckInterval = useRef<NodeJS.Timer>()
+  const chatRef = useRef<ChatRef>(null)
 
   // State
   const [messages, setMessages] = useState<Message[]>([])
@@ -58,64 +41,108 @@ export default function Chatroom() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [lastActivity, setLastActivity] = useState<number>(Date.now())
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme')
+      if (savedTheme === 'dark' || savedTheme === 'light') {
+        return savedTheme
+      }
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark'
+      }
+    }
+    return 'dark'
+  })
   const [showOnlineUsers, setShowOnlineUsers] = useState(false)
   const [showUserInfo, setShowUserInfo] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const messagesPerPage = 20
+  const messagesPerPage = 50
   
   // Settings state
   const [tempUsername, setTempUsername] = useState('')
   const [tempAvatarColor, setTempAvatarColor] = useState('#3B82F6')
   const [tempLocale, setTempLocale] = useState(router.locale)
   const [tempTheme, setTempTheme] = useState<'dark' | 'light'>('dark')
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error';
+  } | null>(null)
 
-  // Move fetchMessages outside useEffect
-  const fetchMessages = async (startIndex = 0) => {
-    const { data, error, count } = await supabase
-      .from('messages')
-      .select(`
-        id,
-        content,
-        created_at,
-        user_id,
-        reply_to,
-        user_profiles (
-          username,
-          avatar_color
-        )
-      `, { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(startIndex, startIndex + messagesPerPage - 1)
+  // Add these state variables
+  const loadingRef = useRef(false) // Use ref instead of state to avoid race conditions
+  const initialLoadRef = useRef(false)
 
-    if (error) {
-      console.error('Error fetching messages:', error)
+  useEffect(() => {
+    document.documentElement.classList.remove('dark', 'light')
+    document.documentElement.classList.add(theme)
+    localStorage.setItem('theme', theme)
+  }, [theme])
+
+  // Modify fetchMessages to include the last loaded ID check
+  const fetchMessages = async (startIndex = 0): Promise<Message[]> => {
+    try {
+      const query = supabase
+        .from('messages')
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id,
+          reply_to,
+          attachment,
+          user_profiles (
+            username,
+            avatar_color
+          )
+        `)
+        .order('created_at', { ascending: false })
+
+      // For pagination, use created_at instead of id
+      if (messages.length > 0 && startIndex > 0) {
+        const oldestMessage = messages[0] // First message is the oldest due to reverse order
+        query.lt('created_at', oldestMessage.created_at)
+      }
+
+      query.limit(messagesPerPage)
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Error fetching messages:', error)
+        return []
+      }
+
+      if (data) {
+        const formattedMessages = (data as any[]).map(message => ({
+          id: message.id,
+          content: message.content,
+          created_at: message.created_at,
+          user_id: message.user_id,
+          reply_to: message.reply_to,
+          attachment: message.attachment,
+          user_profiles: message.user_profiles || { username: '', avatar_color: '#3B82F6' }
+        })) as Message[]
+
+        // Check if we have more messages to load
+        setHasMore(formattedMessages.length === messagesPerPage)
+        
+        return formattedMessages.reverse() // Reverse to show newest at bottom
+      }
+
+      return []
+    } catch (error) {
+      console.error('Error in fetchMessages:', error)
       return []
     }
-
-    if (data) {
-      const formattedMessages = (data as MessageWithProfiles[]).map(message => ({
-        id: message.id,
-        content: message.content,
-        created_at: message.created_at,
-        user_id: message.user_id,
-        reply_to: message.reply_to,
-        user_profiles: message.user_profiles || { username: '', avatar_color: '#3B82F6' },
-        avatar_color: message.user_profiles?.avatar_color || '#3B82F6'
-      }))
-
-      // Check if we have more messages to load
-      setHasMore(count ? startIndex + messagesPerPage < count : false)
-      
-      return formattedMessages.reverse() // Reverse to show newest at bottom
-    }
-
-    return []
   }
 
   useEffect(() => {
     const initializeMessages = async () => {
+      // Prevent multiple initial loads
+      if (initialLoadRef.current || !user) return
+      initialLoadRef.current = true
+      
       const initialMessages = await fetchMessages(0)
       setMessages(initialMessages)
     }
@@ -125,6 +152,7 @@ export default function Chatroom() {
 
     return () => {
       channelRef.current?.unsubscribe()
+      initialLoadRef.current = false // Reset on unmount
     }
   }, [user])
 
@@ -204,6 +232,10 @@ export default function Chatroom() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload: { new: Database['public']['Tables']['messages']['Row'] }) => {
+          // Check if message already exists
+          const messageExists = messages.some(m => m.id === payload.new.id)
+          if (messageExists) return
+
           const { data: profileData } = await supabase
             .from('user_profiles')
             .select('username, avatar_color')
@@ -216,13 +248,20 @@ export default function Chatroom() {
             created_at: payload.new.created_at,
             user_id: payload.new.user_id,
             reply_to: payload.new.reply_to,
+            attachment: payload.new.attachment,
             user_profiles: profileData || { 
               username: '', 
               avatar_color: '#3B82F6' 
             }
           }
           
-          setMessages(current => [...current, newMessage])
+          setMessages(current => {
+            // Double check for duplicates before adding
+            if (current.some(m => m.id === newMessage.id)) {
+              return current
+            }
+            return [...current, newMessage]
+          })
         }
       )
       .on('presence', { event: 'sync' }, () => {
@@ -272,17 +311,26 @@ export default function Chatroom() {
     channelRef.current = channel
   }
 
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim() || !user) return
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    setNotification({ message, type })
+    setTimeout(() => setNotification(null), 3000)
+  }
+
+  const handleSendMessage = async (
+    content: string, 
+    attachment?: { url: string; name: string; type: string; size: number; } | null
+  ) => {
+    if ((!content.trim() && !attachment) || !user) return
 
     const messageData = {
-      content: content.trim(),
+      content: content.trim() || (attachment ? `[File] ${attachment.name}` : ''),
       user_id: user.id,
       reply_to: replyingTo ? {
         id: replyingTo.id,
         content: replyingTo.content,
         user_name: replyingTo.user_profiles?.username || ''
-      } : null
+      } : null,
+      attachment: attachment || null
     }
 
     const { error } = await supabase
@@ -293,6 +341,7 @@ export default function Chatroom() {
       console.error('Error sending message:', error)
     } else {
       setReplyingTo(null)
+      chatRef.current?.scrollToBottom()
     }
   }
 
@@ -333,7 +382,6 @@ export default function Chatroom() {
     if (!user) return
 
     try {
-      // First update the database
       const { error } = await supabase
         .from('user_profiles')
         .update({
@@ -344,7 +392,6 @@ export default function Chatroom() {
 
       if (error) throw error
 
-      // After successful database update, update local state
       setUser(prev => prev ? {
         ...prev,
         username: tempUsername
@@ -353,9 +400,6 @@ export default function Chatroom() {
       
       // Update theme
       setTheme(tempTheme)
-      localStorage.setItem('theme', tempTheme)
-      document.documentElement.classList.remove('dark', 'light')
-      document.documentElement.classList.add(tempTheme)
 
       // Update locale if changed
       if (tempLocale !== router.locale) {
@@ -386,16 +430,29 @@ export default function Chatroom() {
   }
 
   const loadMoreMessages = async () => {
-    if (isLoadingMore || !hasMore) return
-
+    // Prevent duplicate loads
+    if (loadingRef.current || !hasMore || isLoadingMore) return
+    
+    loadingRef.current = true
     setIsLoadingMore(true)
+
     try {
       const moreMessages = await fetchMessages(messages.length)
-      setMessages(prevMessages => [...moreMessages, ...prevMessages])
+      
+      if (moreMessages.length > 0) {
+        setMessages(prevMessages => {
+          const existingMessageIds = new Set(prevMessages.map(m => m.id))
+          const uniqueNewMessages = moreMessages.filter(m => !existingMessageIds.has(m.id))
+          return [...uniqueNewMessages, ...prevMessages]
+        })
+      } else {
+        setHasMore(false)
+      }
     } catch (error) {
       console.error('Error loading more messages:', error)
     } finally {
       setIsLoadingMore(false)
+      loadingRef.current = false
     }
   }
 
@@ -404,10 +461,20 @@ export default function Chatroom() {
 
   return (
     <div className="flex h-screen chat-container overflow-x-hidden">
-      {showCopyNotification && (
-        <div className="fixed md:top-4 top-20 left-1/2 -translate-x-1/2 z-50 bg-[var(--bg-secondary)] px-4 py-2 rounded-lg shadow-lg border border-[var(--border-color)]">
-          <span className="text-sm text-[var(--text-primary)]">
-            {t('messageCopied')}
+      {notification && (
+        <div 
+          className={`fixed md:top-4 top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg shadow-lg border transition-all duration-300 ${
+            notification.type === 'error' 
+              ? 'bg-red-50 border-red-200 dark:bg-red-900/50 dark:border-red-800' 
+              : 'bg-[var(--bg-secondary)] border-[var(--border-color)]'
+          }`}
+        >
+          <span className={`text-sm ${
+            notification.type === 'error'
+              ? 'text-red-600 dark:text-red-400'
+              : 'text-[var(--text-primary)]'
+          }`}>
+            {notification.message}
           </span>
         </div>
       )}
@@ -519,6 +586,7 @@ export default function Chatroom() {
 
       <div className="flex-1 flex flex-col min-w-0 relative bg-[var(--bg-primary)] md:mr-64 pt-16 md:pt-0">
         <Chat
+          ref={chatRef}
           messages={messages}
           onReply={setReplyingTo}
           onCopy={handleCopy}
@@ -536,6 +604,7 @@ export default function Chatroom() {
             onTyping={handleTyping}
             theme={theme}
             typingUsers={typingUsers}
+            showNotification={showNotification}
           />
         </div>
       </div>

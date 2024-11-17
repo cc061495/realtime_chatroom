@@ -17,19 +17,20 @@ export interface Message {
   content: string
   created_at: string
   user_id: string
-  user_profiles: {
-    username: string
-    avatar_color: string
-  }
-  reply_to?: {
+  reply_to: {
     id: string
     content: string
     user_name: string
   } | null
+  user_profiles: {
+    username: string
+    avatar_color: string
+  }
   attachment?: {
     url: string
     name: string
-  }
+    type: string
+  } | null
 }
 
 export interface ColorOption {
@@ -59,4 +60,21 @@ export interface Database {
       }
     }
   }
+}
+
+export interface Attachment {
+  type: 'image'
+  url: string
+  fileName: string
+  file: File
+}
+
+export interface MessageDraft {
+  text: string
+  attachments: Attachment[]
+}
+
+export interface ChatInputProps {
+  onSendMessage: (text: string, attachments?: Attachment[]) => void
+  isLoading?: boolean
 } 

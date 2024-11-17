@@ -1,7 +1,6 @@
-import { useRef, useEffect, useState } from 'react'
-import { useTranslation } from 'next-i18next'
+import { useRef, useEffect, forwardRef } from 'react'
 import { Message as MessageType } from './types'
-import Message from './Message'
+import MessageComponent from './Message'
 
 interface ChatProps {
   messages: MessageType[]
@@ -12,93 +11,137 @@ interface ChatProps {
   hasMore: boolean
 }
 
-export default function Chat({ 
-  messages, 
-  onReply, 
+export interface ChatRef {
+  scrollToBottom: (behavior?: ScrollBehavior) => void
+}
+
+const Chat = forwardRef<ChatRef, ChatProps>(({
+  messages,
+  onReply,
   onCopy,
   onLoadMore,
   isLoadingMore,
-  hasMore 
-}: ChatProps) {
-  const { t } = useTranslation('common')
+  hasMore
+}, ref) => {
   const chatContainerRef = useRef<HTMLDivElement>(null)
-  const [isAtBottom, setIsAtBottom] = useState(true)
-  const [isScrollingUp, setIsScrollingUp] = useState(false)
-  const previousScrollHeightRef = useRef<number>(0)
-  const previousMessagesLengthRef = useRef<number>(messages.length)
-
-  // Scroll to bottom on initial load and new messages
-  useEffect(() => {
-    if (chatContainerRef.current && isAtBottom) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
-    }
-
-    // Handle scroll position when loading more messages
-    if (chatContainerRef.current && messages.length > previousMessagesLengthRef.current) {
-      const newScrollHeight = chatContainerRef.current.scrollHeight
-      const scrollDifference = newScrollHeight - previousScrollHeightRef.current
-      
-      if (scrollDifference > 0 && !isAtBottom) {
-        chatContainerRef.current.scrollTop = scrollDifference
-      }
-    }
-
-    // Update refs for next comparison
-    if (chatContainerRef.current) {
-      previousScrollHeightRef.current = chatContainerRef.current.scrollHeight
-      previousMessagesLengthRef.current = messages.length
-    }
-  }, [messages, isAtBottom])
+  const lastMessageRef = useRef<HTMLDivElement>(null)
+  const prevMessagesLengthRef = useRef(messages.length)
+  const prevScrollHeightRef = useRef(0)
+  const prevFirstMessageId = useRef<string>()
+  const initialScrollDoneRef = useRef(false)
 
   // Initial scroll to bottom
   useEffect(() => {
-    if (chatContainerRef.current) {
+    if (!initialScrollDoneRef.current && messages.length > 0 && chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
-      previousScrollHeightRef.current = chatContainerRef.current.scrollHeight
-      previousMessagesLengthRef.current = messages.length
+      initialScrollDoneRef.current = true
     }
-  }, [])
+  }, [messages])
+  
+  // Handle scrolling for new messages and loading old messages
+  useEffect(() => {
+    if (!chatContainerRef.current) return
 
-  // Add scroll handler for infinite loading
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
-    const isNearTop = scrollTop < 100
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
+    const container = chatContainerRef.current
+    const currentScrollHeight = container.scrollHeight
+    
+    // Check if messages were added
+    const messagesAdded = messages.length > prevMessagesLengthRef.current
+    
+    // Calculate if we're near bottom before any updates
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
+    
+    // More accurate way to detect if we're loading older messages
+    const isLoadingOlder = messagesAdded && 
+      messages.length > prevMessagesLengthRef.current && 
+      messages[0]?.id !== prevFirstMessageId.current &&
+      !isNearBottom
 
-    // Store the current scroll height before loading more messages
-    if (isNearTop && hasMore && !isLoadingMore) {
-      previousScrollHeightRef.current = scrollHeight
+    if (messagesAdded && !isLoadingOlder) {
+      // Only auto-scroll if we were already near the bottom
+      if (isNearBottom) {
+        requestAnimationFrame(() => {
+          if (container) {
+            container.scrollTop = container.scrollHeight
+          }
+        })
+      }
+    } else if (isLoadingOlder && currentScrollHeight !== prevScrollHeightRef.current) {
+      // Maintain scroll position when loading older messages
+      const scrollDiff = currentScrollHeight - prevScrollHeightRef.current
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTop = scrollDiff
+        }
+      })
+    }
+
+    // Update refs for next comparison
+    prevScrollHeightRef.current = currentScrollHeight
+    prevMessagesLengthRef.current = messages.length
+    prevFirstMessageId.current = messages[0]?.id
+  }, [messages])
+
+  // Expose scrollToBottom method via ref
+  useEffect(() => {
+    if (ref) {
+      (ref as any).current = {
+        scrollToBottom: (behavior: ScrollBehavior = 'auto') => {
+          if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+              top: chatContainerRef.current.scrollHeight,
+              behavior
+            })
+          }
+        }
+      }
+    }
+  }, [ref])
+
+  // Handle infinite scroll
+  const handleScroll = () => {
+    if (!chatContainerRef.current || isLoadingMore || !hasMore) return
+
+    const { scrollTop } = chatContainerRef.current
+    
+    // Load more when scrolled near the top (within 50px)
+    if (scrollTop < 50) {
       onLoadMore()
     }
-
-    setIsAtBottom(isNearBottom)
-    setIsScrollingUp(!isNearBottom)
   }
 
   return (
-    <>
-      {/* Loading indicator - adjusted for mobile */}
+    <div 
+      ref={chatContainerRef}
+      className="flex-1 overflow-y-auto custom-scrollbar"
+      onScroll={handleScroll}
+    >
+      {/* Loading indicator */}
       {isLoadingMore && (
-        <div className="absolute top-4 md:top-4 top-16 left-1/2 -translate-x-1/2 z-50 bg-[var(--bg-secondary)] p-2 rounded-lg shadow-lg border border-[var(--border-color)]">
-          <div className="animate-spin rounded-full h-5 w-5 border-2 border-[var(--text-secondary)] border-t-transparent"></div>
+        <div className="flex justify-center p-4">
+          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
 
-      <div 
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-6 scrollbar-thin scrollbar-thumb-[var(--scrollbar-thumb)] scrollbar-track-[var(--scrollbar-track)] hover:scrollbar-thumb-[var(--scrollbar-thumb-hover)]"
-        onScroll={handleScroll}
-      >
-        {/* Messages */}
-        {messages.map((message) => (
-          <Message
+      {/* Messages */}
+      <div className="py-4 space-y-1">
+        {messages.map((message, index) => (
+          <div
             key={message.id}
-            message={message}
-            onReply={onReply}
-            onCopy={onCopy}
-          />
+            ref={index === messages.length - 1 ? lastMessageRef : null}
+          >
+            <MessageComponent
+              message={message}
+              onReply={onReply}
+              onCopy={onCopy}
+            />
+          </div>
         ))}
       </div>
-    </>
+    </div>
   )
-} 
+})
+
+Chat.displayName = 'Chat'
+
+export default Chat 

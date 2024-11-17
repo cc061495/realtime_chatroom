@@ -1,17 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'next-i18next'
-import EmojiPicker from 'emoji-picker-react'
+import EmojiPicker, { Theme } from 'emoji-picker-react'
 import { Message, User } from './types'
 import { supabase } from '../../lib/supabaseClient'
+import Image from 'next/image'
 
 interface MessageInputProps {
   user: User
-  onSendMessage: (content: string, attachment?: { url: string, name: string }) => void
+  onSendMessage: (content: string, attachment?: { url: string; name: string; type: string; size: number } | null) => void
   replyingTo: Message | null
   onCancelReply: () => void
   onTyping: () => void
   theme: 'dark' | 'light'
   typingUsers: Set<string>
+  showNotification: (message: string, type: 'success' | 'error') => void
 }
 
 export default function MessageInput({
@@ -21,7 +23,8 @@ export default function MessageInput({
   onCancelReply,
   onTyping,
   theme,
-  typingUsers
+  typingUsers,
+  showNotification
 }: MessageInputProps) {
   const { t } = useTranslation('common')
   const [message, setMessage] = useState('')
@@ -29,13 +32,25 @@ export default function MessageInput({
   const [uploading, setUploading] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [pendingAttachment, setPendingAttachment] = useState<{
+    url: string;
+    name: string;
+    type: string;
+    size: number;
+  } | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!message.trim() || !user) return
+    if ((!message.trim() && !pendingAttachment) || !user) return
 
-    await onSendMessage(message.trim())
+    await onSendMessage(
+      message.trim(), 
+      pendingAttachment
+    )
+    
     setMessage('')
+    setPendingAttachment(null)
+    
     // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = '40px'
@@ -73,7 +88,10 @@ export default function MessageInput({
 
     // Check file size (10MB limit)
     if (file.size > 10 * 1024 * 1024) {
-      alert(t('fileTooBig'))
+      showNotification(t('fileTooBig'), 'error')
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
       return
     }
 
@@ -83,17 +101,25 @@ export default function MessageInput({
       const fileName = `${Math.random()}.${fileExt}`
       const filePath = `${user.id}/${fileName}`
 
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('attachments')
         .upload(filePath, file)
 
       if (uploadError) throw uploadError
 
-      const { data: { publicUrl } } = supabase.storage
+      // Create a signed URL that expires in 1 year (31536000 seconds)
+      const { data } = await supabase.storage
         .from('attachments')
-        .getPublicUrl(filePath)
+        .createSignedUrl(filePath, 31536000) // 1 year in seconds
 
-      onSendMessage(`[File] ${file.name}`, { url: publicUrl, name: file.name })
+      if (!data?.signedUrl) throw new Error('Could not create signed URL')
+
+      setPendingAttachment({
+        url: data.signedUrl,
+        name: file.name,
+        type: file.type,
+        size: file.size
+      })
     } catch (error) {
       console.error('Error uploading file:', error)
     } finally {
@@ -126,8 +152,45 @@ export default function MessageInput({
         </div>
       )}
 
+      {pendingAttachment && (
+        <div className="mx-4 mb-2 p-2 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)] relative">
+          <div className="flex items-center gap-2">
+            {pendingAttachment.type.startsWith('image/') ? (
+              <div className="relative w-20 h-20">
+                <Image
+                  src={pendingAttachment.url}
+                  alt={pendingAttachment.name}
+                  fill
+                  priority
+                  sizes="80px"
+                  className="object-cover rounded"
+                  unoptimized={true}
+                />
+              </div>
+            ) : (
+              <div className="w-10 h-10 flex items-center justify-center bg-blue-100 rounded">
+                <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+            )}
+            <span className="flex-1 truncate text-sm text-[var(--text-secondary)]">
+              {pendingAttachment.name}
+            </span>
+            <button
+              onClick={() => setPendingAttachment(null)}
+              className="p-1 hover:bg-[var(--hover-bg)] rounded text-[var(--text-secondary)]"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-end gap-2">
-        <div className="relative flex-1 flex items-end bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] focus-within:border-blue-500 transition-colors">
+        <div className="relative flex-1 flex items-end bg-[var(--bg-primary)] rounded-2xl border border-[var(--border-color)] focus-within:border-blue-500 transition-colors">
           <textarea
             ref={textareaRef}
             value={message}
@@ -139,7 +202,7 @@ export default function MessageInput({
               }
             }}
             placeholder={t('sendMessage')}
-            className="flex-1 resize-none bg-transparent text-[var(--text-primary)] px-4 py-2 outline-none custom-scrollbar min-h-[40px] max-h-[200px]"
+            className="flex-1 resize-none bg-transparent text-[var(--text-primary)] px-4 py-2 outline-none custom-scrollbar min-h-[40px] max-h-[200px] rounded-2xl"
             rows={1}
           />
 
@@ -185,7 +248,7 @@ export default function MessageInput({
         <button
           onClick={handleSubmit}
           disabled={!message.trim() && !uploading}
-          className="bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[40px] w-[40px] flex items-center justify-center"
+          className="bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[40px] w-[40px] flex items-center justify-center"
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
@@ -203,7 +266,7 @@ export default function MessageInput({
                 textareaRef.current.focus()
               }
             }}
-            theme={theme === 'dark' ? 'dark' : 'light'}
+            theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
           />
         </div>
       )}

@@ -23,7 +23,7 @@ body {
 /* Custom Scrollbar Styles */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #4b5563 transparent;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -31,12 +31,13 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--scrollbar-track);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #4b5563;
+  background-color: var(--scrollbar-thumb);
   border-radius: 4px;
+  border: 2px solid var(--scrollbar-track);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -237,7 +238,7 @@ body {
   --button-hover: #e2e8f0;
   --shadow-color: rgba(0, 0, 0, 0.05);
   --divider-color: #cbd5e1;
-  --scrollbar-thumb: rgba(0, 0, 0, 0.1);
+  --scrollbar-thumb: #cbd5e1;
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.2);
   --scrollbar-track: transparent;
 }
@@ -258,7 +259,7 @@ body {
   --button-hover: #374151;
   --shadow-color: rgba(0, 0, 0, 0.2);
   --divider-color: #374151;
-  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb: #475569;
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
   --scrollbar-track: transparent;
 

@@ -1,5 +1,6 @@
 import { useTranslation } from 'next-i18next'
 import { Message } from './types'
+import Image from 'next/image'
 
 interface MessageProps {
   message: Message
@@ -14,74 +15,60 @@ export default function MessageComponent({ message, onReply, onCopy }: MessagePr
     return new Date(date).toLocaleString()
   }
 
-  const isImageFile = (fileName: string) => {
-    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
-    const extension = fileName.split('.').pop()?.toLowerCase()
-    return extension ? imageExtensions.includes(extension) : false
-  }
-
-  const renderContent = (content: string, attachment?: { url: string, name: string }) => {
-    if (attachment) {
-      if (isImageFile(attachment.name)) {
-        return (
-          <div className="mt-2">
-            <img 
-              src={attachment.url} 
-              alt={attachment.name}
-              className="max-w-[300px] max-h-[300px] rounded-lg object-contain bg-[var(--bg-secondary)]"
-              loading="lazy"
-            />
-            <a 
-              href={attachment.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-blue-500 hover:underline mt-1 inline-block"
-            >
-              {attachment.name}
-            </a>
+  const renderContent = (message: Message) => {
+    if (message.attachment?.type?.startsWith('image/')) {
+      return (
+        <div className="space-y-2">
+          {message.content && message.attachment?.name && 
+           message.content !== `[File] ${message.attachment.name}` && (
+            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          )}
+          
+          <div className="relative group max-w-[300px]">
+            <div className="relative aspect-video">
+              {message.attachment?.url && (
+                <Image
+                  src={message.attachment.url}
+                  alt={message.attachment.name || 'Image attachment'}
+                  fill
+                  priority
+                  sizes="300px"
+                  className="rounded-lg cursor-pointer object-contain"
+                  onClick={() => message.attachment?.url && window.open(message.attachment.url, '_blank')}
+                  unoptimized={true}
+                />
+              )}
+            </div>
           </div>
-        )
-      } else {
-        // For non-image files
-        return (
-          <div className="mt-2 flex items-center gap-2 text-[var(--text-primary)]">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <a 
-              href={attachment.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-500 hover:underline"
-            >
-              {attachment.name}
-            </a>
-          </div>
-        )
-      }
-    }
-
-    // Regular message with URL detection
-    const urlRegex = /(https?:\/\/[^\s]+)/g
-    const parts = content.split(urlRegex)
-    
-    return parts.map((part, index) => {
-      if (part.match(urlRegex)) {
-        return (
+        </div>
+      )
+    } else if (message.attachment) {
+      // For non-image attachments
+      return (
+        <div className="space-y-2">
+          {/* Show message content if it exists */}
+          {message.content && message.content !== `[File] ${message.attachment.name}` && (
+            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          )}
+          
+          {/* File attachment */}
           <a
-            key={index}
-            href={part}
+            href={message.attachment.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-500 dark:text-blue-400 hover:underline"
-            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-[var(--bg-secondary)] hover:bg-[var(--hover-bg)] rounded-lg transition-colors"
           >
-            {part}
+            <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="text-sm text-[var(--text-primary)]">{message.attachment.name}</span>
           </a>
-        )
-      }
-      return part
-    })
+        </div>
+      )
+    }
+
+    // Regular text message
+    return <p className="whitespace-pre-wrap break-words">{message.content}</p>
   }
 
   return (
@@ -120,7 +107,7 @@ export default function MessageComponent({ message, onReply, onCopy }: MessagePr
             </span>
           </div>
           <div className="text-[var(--text-primary)] mt-1 break-words whitespace-pre-wrap">
-            {renderContent(message.content, message.attachment)}
+            {renderContent(message)}
           </div>
         </div>
         {/* Action buttons */}
