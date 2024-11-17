@@ -1,0 +1,613 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add emoji font support */
+@font-face {
+  font-family: 'EmojiFont';
+  src: local('Segoe UI Emoji'), local('Noto Color Emoji');
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'EmojiFont', sans-serif;
+}
+
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+/* Custom Scrollbar Styles */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
+}
+
+/* Add specific emoji styling */
+.emoji-content {
+  font-family: 'EmojiFont', sans-serif;
+}
+
+/* Emoji Picker Scrollbar and Styles */
+.EmojiPickerReact {
+  --epr-hover-bg-color: #374151 !important;
+  --epr-focus-bg-color: #374151 !important;
+  --epr-highlight-color: #3b82f6 !important;
+  --epr-search-border-color: #4b5563 !important;
+  --epr-category-label-bg-color: #1f2937 !important;
+  --epr-text-color: #ffffff !important;
+  --epr-search-placeholder-color: #9ca3af !important;
+  position: relative !important;
+  z-index: 50 !important;
+}
+
+.EmojiPickerReact .epr-search {
+  background: #374151 !important;
+  color: white !important;
+}
+
+.EmojiPickerReact .epr-emoji-category-label {
+  color: white !important;
+  background: #1f2937 !important;
+}
+
+.EmojiPickerReact .epr-body::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.EmojiPickerReact .epr-body::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.EmojiPickerReact .epr-body::-webkit-scrollbar-thumb {
+  background: #4b5563 !important;
+  border-radius: 4px !important;
+  border: none !important;
+}
+
+.EmojiPickerReact .epr-body::-webkit-scrollbar-thumb:hover {
+  background: #6b7280 !important;
+}
+
+.EmojiPickerReact .epr-category-nav {
+  padding-right: 8px !important;
+}
+
+/* For Firefox */
+.EmojiPickerReact .epr-body {
+  scrollbar-width: thin !important;
+  scrollbar-color: #4b5563 transparent !important;
+}
+
+/* Fix emoji picker close button */
+.emoji-picker-close {
+  position: absolute !important;
+  top: -10px !important;
+  right: -10px !important;
+  z-index: 60 !important;
+  border-radius: 9999px !important;
+  padding: 4px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Add this to prevent horizontal scrolling in chat */
+.chat-container {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Update notification styles */
+.copy-notification {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 50;
+  border: 1px solid var(--border-color);
+  animation: fadeInOut 2s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  85% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+}
+
+/* Update settings sidebar transition */
+.settings-sidebar {
+  transform: translateX(-100%);
+  transition: all 0.3s ease-in-out;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.settings-sidebar.open {
+  transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+.settings-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Update backdrop styles */
+.settings-backdrop {
+  background-color: rgba(0, 0, 0, 0);
+  transition: all 0.3s ease-in-out;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.settings-backdrop.open {
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .emoji-picker-react {
+    width: 100% !important;
+    height: 300px !important;
+  }
+
+  .settings-sidebar {
+    width: 100% !important;
+  }
+}
+
+/* Prevent body scroll when modal is open */
+.modal-open {
+  overflow: hidden;
+}
+
+/* Add left sidebar transition */
+.left-sidebar {
+  transition: all 0.3s ease-in-out;
+  transform: translateX(0);
+}
+
+@media (max-width: 768px) {
+  .left-sidebar {
+    transform: translateX(-100%);
+    position: fixed;
+    z-index: 50;
+  }
+}
+
+/* Light mode styles - update the root variables */
+:root {
+  --bg-primary: #f8fafc;  /* Softer background - slate-50 */
+  --bg-secondary: #f1f5f9; /* Slightly darker - slate-100 */
+  --text-primary: #1e293b; /* Dark text for contrast - slate-800 */
+  --text-secondary: #475569; /* Secondary text - slate-600 */
+  --border-color: #cbd5e1; /* Soft border - slate-300 */
+  --bg-chat: #f8fafc;
+  --bg-sidebar: #f1f5f9;
+  --hover-bg: #e2e8f0; /* Hover state - slate-200 */
+  --message-bg: #ffffff; /* Pure white for messages */
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --button-hover: #e2e8f0;
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  --divider-color: #cbd5e1;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.1);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.2);
+  --scrollbar-track: transparent;
+}
+
+/* Dark mode styles */
+.dark {
+  --bg-primary: #1f2937;
+  --bg-secondary: #111827;
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --border-color: #374151;
+  --bg-chat: #1f2937;
+  --bg-sidebar: #111827;
+  --hover-bg: rgba(51, 65, 85, 0.5);
+  --message-bg: #1f2937;
+  --input-bg: #1f2937;
+  --input-border: #374151;
+  --button-hover: #374151;
+  --shadow-color: rgba(0, 0, 0, 0.2);
+  --divider-color: #374151;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
+  --scrollbar-track: transparent;
+
+  /* Dark mode login page */
+  .login-container {
+    background-color: #1f2937;
+  }
+
+  .login-box {
+    background-color: #111827;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  }
+
+  .login-input {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #ffffff;
+  }
+
+  .login-label {
+    color: #9ca3af;
+  }
+
+  .login-title {
+    color: #ffffff;
+  }
+
+  .login-text {
+    color: #9ca3af;
+  }
+
+  .language-select {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #ffffff;
+  }
+
+  /* Dark mode loading screen */
+  .loading-container {
+    background-color: #1f2937;
+  }
+
+  .loading-text {
+    color: #ffffff;
+  }
+
+  .loading-subtext {
+    color: #9ca3af;
+  }
+
+  .loading-dot {
+    background-color: #3b82f6;
+  }
+}
+
+/* Update light mode specific overrides */
+.light {
+  /* Login page styles */
+  .login-container {
+    background-color: #f8fafc;
+  }
+
+  .login-box {
+    background-color: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+
+  .login-input {
+    background-color: #ffffff;
+    border-color: #9ca3af;
+    color: #111827;
+  }
+
+  .login-label {
+    color: #374151;
+  }
+
+  .login-title {
+    color: #111827;
+  }
+
+  .login-text {
+    color: #374151;
+  }
+
+  .language-select {
+    background-color: #f3f4f6;
+    border-color: #9ca3af;
+    color: #111827;
+  }
+
+  /* Loading screen styles */
+  .loading-container {
+    background-color: #e5e7eb;
+  }
+
+  .loading-text {
+    color: #111827;
+  }
+
+  .loading-subtext {
+    color: #374151;
+  }
+
+  /* Input and textarea */
+  textarea, input[type="text"] {
+    background-color: #ffffff;
+    border-color: #9ca3af;
+    color: #111827;
+  }
+
+  /* Placeholder text */
+  ::placeholder {
+    color: #6b7280;
+  }
+
+  /* Message container */
+  .message-container {
+    background-color: #f3f4f6;
+    border: 1px solid #9ca3af;
+  }
+
+  /* Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #6b7280;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #4b5563;
+  }
+
+  /* Emoji picker */
+  .EmojiPickerReact {
+    --epr-bg-color: #f3f4f6 !important;
+    --epr-hover-bg-color: #e5e7eb !important;
+    --epr-category-label-bg-color: #d1d5db !important;
+    --epr-text-color: #111827 !important;
+    --epr-search-border-color: #9ca3af !important;
+  }
+  --scrollbar-thumb: rgba(0, 0, 0, 0.1);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.2);
+  --scrollbar-track: transparent;
+}
+
+/* Update the textarea scrollbar styles */
+textarea.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 transparent;
+  transition: height 0.2s ease;
+}
+
+/* Only show scrollbar when needed */
+textarea.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  display: none; /* Hide by default */
+}
+
+textarea.custom-scrollbar[style*="overflow-y: auto"]::-webkit-scrollbar {
+  display: block; /* Show when overflow is auto */
+}
+
+textarea.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+textarea.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 4px;
+}
+
+textarea.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
+}
+
+/* Light mode scrollbar */
+.light textarea.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #94a3b8;
+}
+
+.light textarea.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b;
+}
+
+/* Firefox scrollbar - hide by default */
+textarea.custom-scrollbar {
+  scrollbar-width: none;
+}
+
+/* Show Firefox scrollbar when needed */
+textarea.custom-scrollbar[style*="overflow-y: auto"] {
+  scrollbar-width: thin;
+}
+
+/* Update Emoji Picker Styles */
+/* Dark mode emoji picker */
+.dark .EmojiPickerReact {
+  --epr-bg-color: #1f2937 !important;
+  --epr-hover-bg-color: #374151 !important;
+  --epr-focus-bg-color: #374151 !important;
+  --epr-highlight-color: #3b82f6 !important;
+  --epr-search-border-color: #4b5563 !important;
+  --epr-category-label-bg-color: #111827 !important;
+  --epr-text-color: #ffffff !important;
+  --epr-search-placeholder-color: #9ca3af !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Light mode emoji picker */
+.light .EmojiPickerReact {
+  --epr-bg-color: #ffffff !important;
+  --epr-hover-bg-color: #f1f5f9 !important;
+  --epr-focus-bg-color: #f1f5f9 !important;
+  --epr-highlight-color: #3b82f6 !important;
+  --epr-search-border-color: #e2e8f0 !important;
+  --epr-category-label-bg-color: #f8fafc !important;
+  --epr-text-color: #1e293b !important;
+  --epr-search-placeholder-color: #64748b !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Common emoji picker styles */
+.EmojiPickerReact {
+  position: relative !important;
+  z-index: 50 !important;
+}
+
+.EmojiPickerReact .epr-search {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.EmojiPickerReact .epr-emoji-category-label {
+  color: var(--text-primary) !important;
+  background: var(--bg-secondary) !important;
+}
+
+/* Emoji picker close button - light mode */
+.light .emoji-picker-close {
+  background-color: #ffffff !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.light .emoji-picker-close:hover {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+/* Emoji picker close button - dark mode */
+.dark .emoji-picker-close {
+  background-color: #1f2937 !important;
+  color: #9ca3af !important;
+  border: 1px solid #374151 !important;
+}
+
+.dark .emoji-picker-close:hover {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+}
+
+/* Keep all other existing styles unchanged */
+/* ... rest of your existing CSS ... */
+
+/* Add these mobile styles */
+@media (max-width: 768px) {
+  /* Fix mobile header */
+  .mobile-header {
+    height: 64px;
+    background-color: var(--bg-secondary);
+  }
+
+  /* Adjust right sidebar for mobile */
+  .right-sidebar-mobile {
+    position: fixed;
+    top: 64px;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 40;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .right-sidebar-mobile.open {
+    transform: translateX(0);
+  }
+
+  /* Adjust message input on mobile */
+  .message-input-mobile {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
+  }
+}
+
+/* Update the animation keyframes */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 40px;
+  }
+}
+
+@keyframes fadeOutUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 40px;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+  }
+}
+
+/* Update the animation utility classes */
+.animate-fade-in-down {
+  animation: fadeInDown 0.3s ease-out forwards;
+}
+
+.animate-fade-out-up {
+  animation: fadeOutUp 0.3s ease-out forwards;
+}
+
+/* Add these styles for the mobile top bar */
+.mobile-top-bar button {
+  transition: all 0.2s ease-in-out;
+}
+
+.mobile-top-bar .user-button {
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Update hover background color variable if needed */
+:root {
+  --hover-bg: rgba(0, 0, 0, 0.05);
+}
+
+.dark {
+  --hover-bg: rgba(255, 255, 255, 0.05);
+} 
