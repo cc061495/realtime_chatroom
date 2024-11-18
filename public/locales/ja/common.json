@@ -80,5 +80,7 @@
   "deleteMessage": "メッセージを削除",
   "deletedMessage": "このメッセージは削除されました",
   "confirmDelete": "このメッセージを削除してもよろしいですか？",
-  "delete": "削除"
+  "delete": "削除",
+  "videoNotSupported": "お使いのブラウザは動画再生に対応していません",
+  "audioNotSupported": "お使いのブラウザは音声再生に対応していません"
 } 

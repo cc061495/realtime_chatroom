@@ -80,5 +80,7 @@
   "deleteMessage": "删除消息",
   "deletedMessage": "此消息已被删除",
   "confirmDelete": "确定要删除此消息吗？",
-  "delete": "删除"
+  "delete": "删除",
+  "videoNotSupported": "您的浏览器不支持视频播放",
+  "audioNotSupported": "您的浏览器不支持音频播放"
 } 

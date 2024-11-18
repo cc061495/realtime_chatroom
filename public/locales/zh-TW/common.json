@@ -80,5 +80,7 @@
   "deleteMessage": "刪除訊息",
   "deletedMessage": "此訊息已被刪除",
   "confirmDelete": "確定要刪除此訊息嗎？",
-  "delete": "刪除"
+  "delete": "刪除",
+  "videoNotSupported": "您的瀏覽器不支持視頻播放",
+  "audioNotSupported": "您的瀏覽器不支持音頻播放"
 } 

@@ -11,6 +11,63 @@ interface MessageProps {
   currentUserId?: string
 }
 
+// Add these helper functions at the top of the file
+function getYoutubeVideoId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/, // Regular youtube URLs
+    /youtube\.com\/embed\/([^&\s]+)/, // Embed URLs
+    /youtube\.com\/v\/([^&\s]+)/, // Another format
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  return null;
+}
+
+function convertUrlsToLinks(text: string) {
+  // Regex for matching URLs
+  const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
+  
+  // Replace URLs with links directly
+  return text.replace(urlRegex, (url) => {
+    return `[link]${url}[/link]`;
+  }).split(/\[link\]|\[\/link\]/).map((part, i) => {
+    if (i % 2 === 1) { // URL parts
+      const youtubeId = getYoutubeVideoId(part);
+      return (
+        <span key={i}>
+          <a
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:underline"
+          >
+            {part}
+          </a>
+          {youtubeId && (
+            <div className="mt-2 max-w-[500px]">
+              <div className="relative aspect-video">
+                <iframe
+                  src={`https://www.youtube.com/embed/${youtubeId}`}
+                  title="YouTube video player"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute top-0 left-0 w-full h-full rounded-lg"
+                />
+              </div>
+            </div>
+          )}
+        </span>
+      );
+    }
+    return part; // Text parts
+  });
+}
+
 export default function MessageComponent({ message, onReply, onCopy, onDelete, currentUserId }: MessageProps) {
   const { t } = useTranslation('common')
   const isOwnMessage = message.user_id === currentUserId
@@ -37,6 +94,51 @@ export default function MessageComponent({ message, onReply, onCopy, onDelete, c
         <span className="text-[var(--text-secondary)] italic">
           {t('deletedMessage')}
         </span>
+      )
+    } else if (message.attachment?.type?.startsWith('audio/')) {
+      return (
+        <div className="space-y-2">
+          {message.content && message.attachment?.name && 
+           message.content !== `[File] ${message.attachment.name}` && (
+            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          )}
+          
+          <div className="relative group max-w-[300px]">
+            <div className="bg-[var(--bg-secondary)] p-3 rounded-lg">
+              <audio
+                controls
+                className="w-full"
+                preload="metadata"
+              >
+                <source src={message.attachment.url} type={message.attachment.type} />
+                {t('audioNotSupported')}
+              </audio>
+            </div>
+          </div>
+        </div>
+      )
+    } else if (message.attachment?.type?.startsWith('video/')) {
+      return (
+        <div className="space-y-2">
+          {message.content && message.attachment?.name && 
+           message.content !== `[File] ${message.attachment.name}` && (
+            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          )}
+          
+          <div className="relative group max-w-[300px]">
+            <div className="relative aspect-video">
+              <video
+                src={message.attachment.url}
+                controls
+                className="rounded-lg w-full h-full"
+                preload="metadata"
+              >
+                <source src={message.attachment.url} type={message.attachment.type} />
+                {t('videoNotSupported')}
+              </video>
+            </div>
+          </div>
+        </div>
       )
     } else if (message.attachment?.type?.startsWith('image/')) {
       return (
@@ -89,8 +191,12 @@ export default function MessageComponent({ message, onReply, onCopy, onDelete, c
       )
     }
 
-    // Regular text message
-    return <p className="whitespace-pre-wrap break-words">{message.content}</p>
+    // Regular text message with URL detection
+    return (
+      <p className="whitespace-pre-wrap break-words">
+        {convertUrlsToLinks(message.content)}
+      </p>
+    );
   }
 
   return (
