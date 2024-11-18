@@ -18,20 +18,13 @@ export interface Message {
   content: string
   created_at: string
   user_id: string
-  reply_to: {
-    id: string
-    content: string
-    user_name: string
-  } | null
+  reply_to: any
+  attachment: any
   user_profiles: {
     username: string
     avatar_color: string
   }
-  attachment?: {
-    url: string
-    name: string
-    type: string
-  } | null
+  is_deleted?: boolean
 }
 
 export interface ColorOption {
@@ -48,11 +41,7 @@ export interface Database {
           content: string
           created_at: string
           user_id: string
-          reply_to: {
-            id: string
-            content: string
-            user_name: string
-          } | null
+          reply_to: any
           user_profiles?: {
             username: string
             avatar_color: string

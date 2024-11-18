@@ -58,7 +58,7 @@
   "rememberMe": "記住我",
   "loginWith": "使用其他方式登入",
   "registerWith": "使用其他方式註冊",
-  "agreeToTerms": "註冊即表示您同意我們的條款和隱私政策",
+  "agreeToTerms": "註冊即示您同意我們的條款和隱私政策",
   "passwordConfirm": "確認密碼",
   "passwordsNotMatch": "密碼不符",
   "saveSettings": "儲存",
@@ -73,5 +73,12 @@
   "theme": "主題",
   "light": "明亮",
   "dark": "深色",
-  "fileTooBig": "檔案太大。最大大小為10MB"
+  "fileTooBig": "檔案太大。最大大小為10MB",
+  "messageDeleted": "訊息已成功刪除",
+  "cannotDeleteMessage": "您只能刪除自己的訊息",
+  "errorDeletingMessage": "刪除訊息時發生錯誤",
+  "deleteMessage": "刪除訊息",
+  "deletedMessage": "此訊息已被刪除",
+  "confirmDelete": "確定要刪除此訊息嗎？",
+  "delete": "刪除"
 } 

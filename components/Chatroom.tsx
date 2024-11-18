@@ -13,6 +13,8 @@ import MessageInput from '@/components/chat/MessageInput'
 import Settings from '@/components/chat/Settings'
 import UserInfo from '@/components/chat/UserInfo'
 
+type NonNullUser = Exclude<User, null>;
+
 const colorOptions: ColorOption[] = [
   { name: 'Blue', value: '#3B82F6' },
   { name: 'Red', value: '#EF4444' },
@@ -27,7 +29,6 @@ export default function Chatroom() {
   const { t } = useTranslation('common')
   const router = useRouter()
   const channelRef = useRef<any>(null)
-  const typingTimeoutRef = useRef<NodeJS.Timeout>()
   const chatRef = useRef<ChatRef>(null)
 
   // State
@@ -89,13 +90,14 @@ export default function Chatroom() {
           user_id,
           reply_to,
           attachment,
+          is_deleted,
           user_profiles (
             username,
             avatar_color
           )
         `)
         .order('created_at', { ascending: false })
-
+        
       // For pagination, use created_at instead of id
       if (messages.length > 0 && startIndex > 0) {
         const oldestMessage = messages[0] // First message is the oldest due to reverse order
@@ -119,6 +121,7 @@ export default function Chatroom() {
           user_id: message.user_id,
           reply_to: message.reply_to,
           attachment: message.attachment,
+          is_deleted: message.is_deleted,
           user_profiles: message.user_profiles || { username: '', avatar_color: '#3B82F6' }
         })) as Message[]
 
@@ -228,38 +231,53 @@ export default function Chatroom() {
     })
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        async (payload: { new: Database['public']['Tables']['messages']['Row'] }) => {
-          // Check if message already exists
-          const messageExists = messages.some(m => m.id === payload.new.id)
-          if (messageExists) return
+        { event: '*', schema: 'public', table: 'messages' },
+        async (payload: { 
+          new: Database['public']['Tables']['messages']['Row'],
+          eventType: 'INSERT' | 'UPDATE' | 'DELETE'
+        }) => {
+          if (payload.eventType === 'INSERT') {
+            // Check if message already exists
+            const messageExists = messages.some(m => m.id === payload.new.id)
+            if (messageExists) return
 
-          const { data: profileData } = await supabase
-            .from('user_profiles')
-            .select('username, avatar_color')
-            .eq('user_id', payload.new.user_id)
-            .single()
+            const { data: profileData } = await supabase
+              .from('user_profiles')
+              .select('username, avatar_color')
+              .eq('user_id', payload.new.user_id)
+              .single()
 
-          const newMessage: Message = {
-            id: payload.new.id,
-            content: payload.new.content,
-            created_at: payload.new.created_at,
-            user_id: payload.new.user_id,
-            reply_to: payload.new.reply_to,
-            attachment: payload.new.attachment,
-            user_profiles: profileData || { 
-              username: '', 
-              avatar_color: '#3B82F6' 
+            const newMessage: Message = {
+              id: payload.new.id,
+              content: payload.new.content,
+              created_at: payload.new.created_at,
+              user_id: payload.new.user_id,
+              reply_to: payload.new.reply_to,
+              attachment: payload.new.attachment,
+              is_deleted: payload.new.is_deleted,
+              user_profiles: profileData || { 
+                username: '', 
+                avatar_color: '#3B82F6' 
+              }
             }
+            
+            setMessages(current => {
+              // Double check for duplicates before adding
+              if (current.some(m => m.id === newMessage.id)) {
+                return current
+              }
+              return [...current, newMessage]
+            })
+          } else if (payload.eventType === 'UPDATE' && payload.new.is_deleted) {
+            // Handle message deletion
+            setMessages(current => 
+              current.map(msg => 
+                msg.id === payload.new.id 
+                  ? { ...msg, is_deleted: true }
+                  : msg
+              )
+            )
           }
-          
-          setMessages(current => {
-            // Double check for duplicates before adding
-            if (current.some(m => m.id === newMessage.id)) {
-              return current
-            }
-            return [...current, newMessage]
-          })
         }
       )
       .on('presence', { event: 'sync' }, () => {
@@ -356,25 +374,12 @@ export default function Chatroom() {
   const handleTyping = () => {
     if (!user || !channelRef.current) return
 
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-
     channelRef.current.track({ 
       isTyping: true, 
       username: user.username,
       lastActive: Date.now(),
       avatarColor
     })
-
-    typingTimeoutRef.current = setTimeout(() => {
-      channelRef.current?.track({ 
-        isTyping: false, 
-        username: user.username,
-        lastActive: Date.now(),
-        avatarColor
-      })
-    }, 3000)
   }
 
   const handleSaveSettings = async () => {
@@ -455,11 +460,43 @@ export default function Chatroom() {
     }
   }
 
+  const handleDeleteMessage = async (messageId: string, userId: string) => {
+    // Check if the message belongs to the current user
+    if (userId !== user?.id) {
+      showNotification(t('cannotDeleteMessage'), 'error')
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_deleted: true })
+        .eq('id', messageId)
+
+      if (error) {
+        console.error('Error deleting message:', error)
+        showNotification(t('errorDeletingMessage'), 'error')
+        return
+      }
+
+      // Update local state
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, is_deleted: true }
+            : msg
+        )
+      )
+
+      showNotification(t('messageDeleted'), 'success')
+    } catch (error) {
+      console.error('Error in handleDeleteMessage:', error)
+      showNotification(t('errorDeletingMessage'), 'error')
+    }
+  }
+
   if (loading) return <LoadingScreen />
-  if (!user) return <Login onLogin={(user) => {
-    setUser(user);
-    setAvatarColor(user.avatarColor || '#3B82F6');
-  }} />
+  if (!user) return null;
 
   return (
     <div className="flex h-screen chat-container overflow-x-hidden">
@@ -537,7 +574,7 @@ export default function Chatroom() {
       <LeftSidebar 
         onSettingsClick={() => setShowSettings(true)}
         onLogout={handleLogout}
-        user={user}
+        user={user as NonNullUser}
         avatarColor={avatarColor}
         isAway={isUserAway(lastActivity)}
         onUserInfoClick={() => setShowUserInfo(true)}
@@ -592,14 +629,16 @@ export default function Chatroom() {
           messages={messages}
           onReply={setReplyingTo}
           onCopy={handleCopy}
+          onDelete={handleDeleteMessage}
           onLoadMore={loadMoreMessages}
           isLoadingMore={isLoadingMore}
           hasMore={hasMore}
+          currentUserId={user.id}
         />
 
         <div className="relative z-20">
           <MessageInput
-            user={user}
+            user={user as NonNullUser}
             onSendMessage={handleSendMessage}
             replyingTo={replyingTo}
             onCancelReply={() => setReplyingTo(null)}
@@ -613,7 +652,7 @@ export default function Chatroom() {
 
       <RightSidebar
         className="w-64 flex-shrink-0 fixed right-0 top-0 bottom-0 md:block hidden"
-        currentUser={user}
+        currentUser={user as NonNullUser}
         onlineUsers={onlineUsers}
         userAvatarColor={avatarColor}
         isUserAway={isUserAway}

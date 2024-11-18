@@ -73,5 +73,12 @@
   "theme": "主题",
   "light": "明亮",
   "dark": "深色",
-  "fileTooBig": "文件太大。最大大小为10MB"
+  "fileTooBig": "文件太大。最大大小为10MB",
+  "messageDeleted": "消息已成功删除",
+  "cannotDeleteMessage": "您只能删除自己的消息",
+  "errorDeletingMessage": "删除消息时发生错误",
+  "deleteMessage": "删除消息",
+  "deletedMessage": "此消息已被删除",
+  "confirmDelete": "确定要删除此消息吗？",
+  "delete": "删除"
 } 

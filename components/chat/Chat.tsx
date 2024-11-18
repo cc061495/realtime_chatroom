@@ -6,9 +6,11 @@ interface ChatProps {
   messages: MessageType[]
   onReply: (message: MessageType) => void
   onCopy: (content: string) => void
+  onDelete: (messageId: string, userId: string) => void
   onLoadMore: () => void
   isLoadingMore: boolean
   hasMore: boolean
+  currentUserId?: string
 }
 
 export interface ChatRef {
@@ -19,9 +21,11 @@ const Chat = forwardRef<ChatRef, ChatProps>(({
   messages,
   onReply,
   onCopy,
+  onDelete,
   onLoadMore,
   isLoadingMore,
-  hasMore
+  hasMore,
+  currentUserId
 }, ref) => {
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const lastMessageRef = useRef<HTMLDivElement>(null)
@@ -136,6 +140,8 @@ const Chat = forwardRef<ChatRef, ChatProps>(({
               message={message}
               onReply={onReply}
               onCopy={onCopy}
+              onDelete={onDelete}
+              currentUserId={currentUserId}
             />
           </div>
         ))}

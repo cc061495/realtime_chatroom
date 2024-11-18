@@ -73,5 +73,12 @@
   "theme": "テーマ",
   "light": "ライト",
   "dark": "ダーク",
-  "fileTooBig": "ファイルが大きすぎます。最大サイズは10MBです"
+  "fileTooBig": "ファイルが大きすぎます。最大サイズは10MBです",
+  "messageDeleted": "メッセージが正常に削除されました",
+  "cannotDeleteMessage": "自分のメッセージのみ削除できます",
+  "errorDeletingMessage": "メッセージの削除中にエラーが発生しました",
+  "deleteMessage": "メッセージを削除",
+  "deletedMessage": "このメッセージは削除されました",
+  "confirmDelete": "このメッセージを削除してもよろしいですか？",
+  "delete": "削除"
 } 

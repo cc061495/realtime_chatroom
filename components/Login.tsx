@@ -17,11 +17,24 @@ export default function Login({ onLogin }: LoginProps) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (router.locale) {
-      i18n.changeLanguage(router.locale)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme')
+      if (savedTheme === 'dark' || savedTheme === 'light') {
+        return savedTheme
+      }
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark'
+      }
     }
-  }, [router.locale, i18n])
+    return 'dark'
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.remove('dark', 'light')
+    document.documentElement.classList.add(theme)
+    localStorage.setItem('theme', theme)
+  }, [theme])
 
   const changeLanguage = async (lng: string) => {
     await router.push(router.pathname, router.pathname, { locale: lng })
@@ -156,12 +169,16 @@ export default function Login({ onLogin }: LoginProps) {
             return
           }
 
+          // Call onLogin with the user data
           onLogin({
             id: authData.user.id,
             email: authData.user.email!,
             username: profileData.username,
             avatarColor: profileData.avatar_color || '#3B82F6'
           })
+
+          // Add this line to force a page refresh after successful login
+          window.location.href = '/'
         }
       }
     } catch (err: any) {
@@ -188,13 +205,33 @@ export default function Login({ onLogin }: LoginProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 login-container">
-      <div className="max-w-md w-full space-y-8 p-8 rounded-lg shadow-lg login-box">
-        <div className="flex justify-end">
+    <div className={`min-h-screen flex items-center justify-center p-4 bg-[var(--bg-primary)] text-[var(--text-primary)]`}>
+      <div className="max-w-md w-full space-y-8 p-8 rounded-lg shadow-lg bg-[var(--bg-secondary)] border border-[var(--border-color)]">
+        <div className="flex justify-between items-center">
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-2 rounded-full hover:bg-[var(--hover-bg)] transition-colors"
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                />
+              </svg>
+            )}
+          </button>
+
           <select
             onChange={(e) => changeLanguage(e.target.value)}
             value={router.locale}
-            className="rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 language-select"
+            className="rounded px-2 py-1 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] focus:outline-none focus:border-blue-500"
             title={t('switchLanguage')}
           >
             <option value="en">English</option>
@@ -204,7 +241,7 @@ export default function Login({ onLogin }: LoginProps) {
           </select>
         </div>
         <div>
-          <h2 className="text-center text-3xl font-extrabold login-title">
+          <h2 className="text-center text-3xl font-extrabold">
             {isRegistering ? t('createNewAccount') : t('welcomeBack')}
           </h2>
         </div>
