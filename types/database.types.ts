@@ -41,6 +41,11 @@ export interface Database {
         Update: {
           content?: string
           is_deleted?: boolean
+          reply_to?: {
+            id: string
+            content: string
+            user_name: string
+          } | null
         }
       }
     }

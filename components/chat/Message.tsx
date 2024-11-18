@@ -124,7 +124,23 @@ export default function MessageComponent({ message, onReply, onCopy, onDelete, c
       )}
 
       {/* Message Content */}
-      <div className="group hover:bg-[var(--hover-bg)] px-4 py-2 rounded-md">
+      <div className="group hover:bg-[var(--hover-bg)] px-4 py-2 rounded-md">        
+        {/* Reply reference if exists */}
+        {message.reply_to && (
+          <div className="ml-12 mb-1 text-sm text-[var(--text-secondary)] flex items-center gap-2">
+            <svg className="w-4 h-4 rotate-180 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"></path>
+            </svg>
+            <div className="flex items-center gap-1 min-w-0">
+              <span className="whitespace-nowrap">
+                {t('replyingTo')} {message.reply_to.user_name}:
+              </span>
+              <span className="truncate min-w-0">
+                {message.reply_to.content}
+              </span>
+            </div>
+          </div>
+        )}
         <div className="flex items-start gap-x-3">
           <div 
             className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
