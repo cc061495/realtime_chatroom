@@ -45,7 +45,7 @@ export default function RightSidebar({
             </h2>
           </div>
           
-          <div className="p-2 space-y-1">
+          <div className="p-2 space-y-0.5">
             {/* Current user */}
             <div 
               className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--hover-bg)] cursor-pointer transition-colors duration-150"

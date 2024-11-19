@@ -284,7 +284,7 @@ export default function Chatroom() {
           }
         }
       )
-      .on('presence', { event: 'sync' }, () => {
+      .on('presence', { event: 'sync' }, async () => {
         const presenceState = channel.presenceState()
         const typingState = new Set<string>()
         const currentOnlineUsers: OnlineUser[] = []
@@ -296,23 +296,33 @@ export default function Chatroom() {
           lastActive?: number
           avatarColor?: string
           status?: string
-          created_at?: string
+          user_id?: string
         }>
         
-        allPresences.forEach((presence) => {
+        // Fetch user profiles for all online users
+        for (const presence of allPresences) {
           if (presence.username && presence.username !== user?.username) {
+            // Fetch user profile data including created_at
+            const { data: profileData } = await supabase
+              .from('user_profiles')
+              .select('username, avatar_color, created_at')
+              .eq('username', presence.username)
+              .single()
+
             currentOnlineUsers.push({
               username: presence.username,
               status: presence.isTyping ? 'typing' : (presence.status || 'online'),
               lastActive: presence.lastActive || now,
               avatarColor: presence.avatarColor || '#3B82F6',
-              created_at: presence.created_at
+              created_at: profileData?.created_at || '',
+              user_id: presence.user_id
             })
+
             if (presence.isTyping) {
               typingState.add(presence.username)
             }
           }
-        })
+        }
         
         setOnlineUsers(currentOnlineUsers)
         setTypingUsers(typingState)
@@ -325,7 +335,7 @@ export default function Chatroom() {
             lastActive: Date.now(),
             avatarColor: avatarColor,
             status: user.status || 'online',
-            created_at: user.created_at
+            user_id: user.id
           })
         }
       })
@@ -421,7 +431,8 @@ export default function Chatroom() {
         isTyping: false, 
         username: tempUsername,
         lastActive: Date.now(),
-        avatarColor: tempAvatarColor
+        avatarColor: tempAvatarColor,
+        user_id: user.id
       })
 
       setShowSettings(false)
