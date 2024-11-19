@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useTranslation } from 'next-i18next'
-import { OnlineUser, User } from './types'
+import { User, OnlineUser } from './types'
+import UserProfileModal from './UserProfileModal'
 
 interface RightSidebarProps {
   currentUser: User
@@ -10,81 +12,106 @@ interface RightSidebarProps {
   className?: string
 }
 
-export default function RightSidebar({ 
-  currentUser, 
-  onlineUsers, 
+export default function RightSidebar({
+  currentUser,
+  onlineUsers,
   userAvatarColor,
   isUserAway,
   lastActivity,
   className = ''
 }: RightSidebarProps) {
   const { t } = useTranslation('common')
+  const [selectedUser, setSelectedUser] = useState<OnlineUser | null>(null)
+
+  // Calculate total online users (including current user)
+  const totalOnlineUsers = onlineUsers.length + 1
 
   return (
-    <div className={`bg-[var(--bg-secondary)] border-l border-[var(--border-color)] shadow-lg ${className}`}>
-      <div className="p-4 h-full overflow-y-auto">
-        <h2 className="text-[var(--text-primary)] font-semibold text-lg mb-3">
-          {t('onlineUsers')} ({onlineUsers.length + 1})
-        </h2>
-        <div className="space-y-2 max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar">
-          {/* Current user */}
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
-                style={{ backgroundColor: userAvatarColor }}
-              >
-                {currentUser?.username.charAt(0).toUpperCase()}
-              </div>
-              <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[var(--bg-secondary)] ${
-                isUserAway(lastActivity) ? 'bg-yellow-500' : 'bg-green-500'
-              }`}></div>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[var(--text-primary)]">
-                {currentUser?.username} ({t('you')})
-              </span>
-              {isUserAway(lastActivity) && (
-                <span className="text-[var(--text-secondary)] text-sm">
-                  {t('away')}
-                </span>
-              )}
-            </div>
+    <>
+      {selectedUser && (
+        <UserProfileModal
+          username={selectedUser.username}
+          avatarColor={selectedUser.avatarColor}
+          createdAt={selectedUser.created_at || ''}
+          onClose={() => setSelectedUser(null)}
+        />
+      )}
+
+      <div className={className}>
+        <div className="h-full bg-[var(--bg-secondary)] border-l border-[var(--border-color)]">
+          <div className="p-4 border-b border-[var(--border-color)]">
+            <h2 className="text-[var(--text-primary)] text-sm font-semibold uppercase tracking-wider">
+              {t('onlineUsers')} ({totalOnlineUsers})
+            </h2>
           </div>
           
-          {/* Other online users */}
-          {onlineUsers.map((onlineUser, index) => (
-            <div key={index} className="flex items-center gap-3">
+          <div className="p-2 space-y-1">
+            {/* Current user */}
+            <div 
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--hover-bg)] cursor-pointer transition-colors duration-150"
+              onClick={() => setSelectedUser({ 
+                username: currentUser.username,
+                avatarColor: userAvatarColor,
+                lastActive: lastActivity,
+                status: (currentUser.status as "online" | "typing" | "away" | "busy") || 'online',
+                created_at: currentUser.created_at
+              })}
+            >
               <div className="relative">
                 <div 
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
-                  style={{ backgroundColor: onlineUser.avatarColor }}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm shadow-sm transition-transform duration-150 group-hover:scale-105"
+                  style={{ backgroundColor: userAvatarColor }}
                 >
-                  {onlineUser.username.charAt(0).toUpperCase()}
+                  {currentUser.username.charAt(0).toUpperCase()}
                 </div>
-                <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[var(--bg-secondary)] ${
-                  onlineUser.status === 'away' ? 'bg-yellow-500' : 'bg-green-500'
-                }`}></div>
+                <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[var(--bg-secondary)] bg-green-500" />
               </div>
-              <div className="flex flex-col">
-                <span className="text-[var(--text-primary)]">
-                  {onlineUser.username}
-                </span>
-                {onlineUser.status === 'typing' && (
-                  <span className="text-[var(--text-secondary)] text-sm">
-                    {t('typing')}
-                  </span>
-                )}
-                {onlineUser.status === 'away' && (
-                  <span className="text-[var(--text-secondary)] text-sm">
-                    {t('away')}
-                  </span>
-                )}
+              <div className="min-w-0 flex-1">
+                <div className="text-[var(--text-primary)] font-medium truncate">
+                  {currentUser.username} <span className="text-[var(--text-secondary)] font-normal">({t('you')})</span>
+                </div>
               </div>
             </div>
-          ))}
+
+            {/* Other online users */}
+            {onlineUsers.map((user) => (
+              <div 
+                key={user.username} 
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--hover-bg)] cursor-pointer transition-colors duration-150"
+                onClick={() => setSelectedUser({
+                  ...user,
+                  created_at: user.created_at
+                })}
+              >
+                <div className="relative">
+                  <div 
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm shadow-sm transition-transform duration-150 group-hover:scale-105"
+                    style={{ backgroundColor: user.avatarColor }}
+                  >
+                    {user.username.charAt(0).toUpperCase()}
+                  </div>
+                  <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[var(--bg-secondary)] ${
+                    user.status === 'away' ? 'bg-yellow-500' : 
+                    user.status === 'busy' ? 'bg-red-500' : 'bg-green-500'
+                  }`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[var(--text-primary)] font-medium truncate">
+                    {user.username}
+                  </div>
+                  {user.status !== 'online' && (
+                    <div className="text-xs text-[var(--text-secondary)] truncate">
+                      {user.status === 'typing' ? t('typing') : 
+                       user.status === 'away' ? t('away') :
+                       user.status === 'busy' ? t('statusBusy') : ''}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 } 

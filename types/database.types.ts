@@ -21,6 +21,8 @@ export interface Database {
           user_profiles?: {
             username: string
             avatar_color: string
+            created_at: string
+            status?: string
           }
         }
         Insert: {
@@ -46,6 +48,27 @@ export interface Database {
             content: string
             user_name: string
           } | null
+        }
+      }
+      user_profiles: {
+        Row: {
+          user_id: string
+          username: string
+          avatar_color: string
+          created_at: string
+          status?: string
+        }
+        Insert: {
+          username: string
+          avatar_color: string
+          created_at: string
+          status?: string
+        }
+        Update: {
+          username?: string
+          avatar_color?: string
+          created_at?: string
+          status?: string
         }
       }
     }

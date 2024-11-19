@@ -93,7 +93,8 @@ export default function Chatroom() {
           is_deleted,
           user_profiles (
             username,
-            avatar_color
+            avatar_color,
+            created_at
           )
         `)
         .order('created_at', { ascending: false })
@@ -188,7 +189,7 @@ export default function Chatroom() {
         if (session?.user) {
           const { data: profileData } = await supabase
             .from('user_profiles')
-            .select('username, avatar_color')
+            .select('*')
             .eq('user_id', session.user.id)
             .single()
 
@@ -197,6 +198,8 @@ export default function Chatroom() {
               id: session.user.id,
               email: session.user.email!,
               username: profileData.username,
+              created_at: profileData.created_at,
+              status: profileData.status
             })
             setAvatarColor(profileData.avatar_color || '#3B82F6')
           }
@@ -257,7 +260,8 @@ export default function Chatroom() {
               is_deleted: payload.new.is_deleted,
               user_profiles: profileData || { 
                 username: '', 
-                avatar_color: '#3B82F6' 
+                avatar_color: '#3B82F6',
+                created_at: ''
               }
             }
             
@@ -286,23 +290,23 @@ export default function Chatroom() {
         const currentOnlineUsers: OnlineUser[] = []
         const now = Date.now()
         
-        // Flatten all presence states into a single array
         const allPresences = Object.values(presenceState).flat() as Array<{
           username?: string
           isTyping?: boolean
           lastActive?: number
           avatarColor?: string
+          status?: string
+          created_at?: string
         }>
         
-        // Filter and map presences to online users
         allPresences.forEach((presence) => {
           if (presence.username && presence.username !== user?.username) {
-            const isAway = now - (presence.lastActive || now) > 60000
             currentOnlineUsers.push({
               username: presence.username,
-              status: isAway ? 'away' : (presence.isTyping ? 'typing' : 'online'),
+              status: presence.isTyping ? 'typing' : (presence.status || 'online'),
               lastActive: presence.lastActive || now,
-              avatarColor: presence.avatarColor || '#3B82F6'
+              avatarColor: presence.avatarColor || '#3B82F6',
+              created_at: presence.created_at
             })
             if (presence.isTyping) {
               typingState.add(presence.username)
@@ -319,7 +323,9 @@ export default function Chatroom() {
             isTyping: false, 
             username: user.username,
             lastActive: Date.now(),
-            avatarColor: avatarColor
+            avatarColor: avatarColor,
+            status: user.status || 'online',
+            created_at: user.created_at
           })
         }
       })

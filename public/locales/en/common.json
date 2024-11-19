@@ -68,8 +68,7 @@
   "usernameTooShort": "Username must be at least 3 characters",
   "invalidPassword": "Password must be at least 6 characters",
   "databaseError": "Database error, please try again",
-  "userSettings": "User",
-  "systemSettings": "System",
+  "userSettings": "User Settings",
   "theme": "Theme",
   "light": "Light",
   "dark": "Dark",
@@ -82,5 +81,9 @@
   "confirmDelete": "Are you sure you want to delete this message?",
   "delete": "Delete",
   "videoNotSupported": "Your browser does not support the video tag.",
-  "audioNotSupported": "Your browser does not support the audio player."
+  "audioNotSupported": "Your browser does not support the audio player.",
+  "memberSince": "Member since",
+  "online": "Online",
+  "busy": "Busy",
+  "unknownDate": "Unknown date"
 } 

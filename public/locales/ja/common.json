@@ -68,8 +68,7 @@
   "usernameTooShort": "ユーザー名は3文字以上である必要があります",
   "invalidPassword": "パスワードは6文字以上である必要があります",
   "databaseError": "データベースエラー。もう一度お試しください",
-  "userSettings": "ユーザー",
-  "systemSettings": "システム",
+  "userSettings": "ユーザー設定",
   "theme": "テーマ",
   "light": "ライト",
   "dark": "ダーク",
@@ -82,5 +81,8 @@
   "confirmDelete": "このメッセージを削除してもよろしいですか？",
   "delete": "削除",
   "videoNotSupported": "お使いのブラウザは動画再生に対応していません",
-  "audioNotSupported": "お使いのブラウザは音声再生に対応していません"
+  "audioNotSupported": "お使いのブラウザは音声再生に対応していません",
+  "memberSince": "登録日",
+  "online": "オンライン",
+  "busy": "取り込み中"
 } 

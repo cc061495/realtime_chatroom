@@ -2,6 +2,7 @@ import { useTranslation } from 'next-i18next'
 import { Message } from './types'
 import Image from 'next/image'
 import { useState } from 'react'
+import UserProfileModal from './UserProfileModal'
 
 interface MessageProps {
   message: Message
@@ -72,6 +73,7 @@ export default function MessageComponent({ message, onReply, onCopy, onDelete, c
   const { t } = useTranslation('common')
   const isOwnMessage = message.user_id === currentUserId
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showUserProfile, setShowUserProfile] = useState(false)
 
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true)
@@ -193,14 +195,23 @@ export default function MessageComponent({ message, onReply, onCopy, onDelete, c
 
     // Regular text message with URL detection
     return (
-      <p className="whitespace-pre-wrap break-words">
+      <div className="whitespace-pre-wrap break-words">
         {convertUrlsToLinks(message.content)}
-      </p>
+      </div>
     );
   }
 
   return (
     <>
+      {showUserProfile && (
+        <UserProfileModal
+          username={message.user_profiles.username}
+          avatarColor={message.user_profiles.avatar_color}
+          createdAt={message.user_profiles.created_at}
+          onClose={() => setShowUserProfile(false)}
+        />
+      )}
+
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -248,12 +259,13 @@ export default function MessageComponent({ message, onReply, onCopy, onDelete, c
           </div>
         )}
         <div className="flex items-start gap-x-3">
-          <div 
-            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+          <button 
+            onClick={() => setShowUserProfile(true)}
+            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold hover:opacity-80 transition-opacity"
             style={{ backgroundColor: message.user_profiles.avatar_color || '#3B82F6' }}
           >
             {message.user_profiles.username.charAt(0).toUpperCase()}
-          </div>
+          </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-x-2">
               <span className="font-semibold text-[var(--text-primary)]">

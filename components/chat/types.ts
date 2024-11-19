@@ -1,16 +1,19 @@
 export interface OnlineUser {
   username: string
   user_id?: string
-  status: 'online' | 'typing' | 'away'
+  status: 'online' | 'typing' | 'away' | 'busy'
   lastActive: number
   avatarColor: string
+  created_at?: string
 }
 
 export interface User {
   id: string
-  email: string
   username: string
+  created_at: string
+  email: string
   avatarColor?: string
+  status?: "online" | "typing" | "away" | "busy"
 }
 
 export interface Message {
@@ -18,13 +21,23 @@ export interface Message {
   content: string
   created_at: string
   user_id: string
-  reply_to: any
-  attachment: any
   user_profiles: {
     username: string
     avatar_color: string
+    created_at: string
+    status?: string
   }
-  is_deleted?: boolean
+  reply_to?: {
+    id: string
+    content: string
+    user_name: string
+  } | null
+  attachment?: {
+    url: string
+    name: string
+    type: string
+  } | null
+  is_deleted: boolean
 }
 
 export interface ColorOption {
@@ -45,6 +58,8 @@ export interface Database {
           user_profiles?: {
             username: string
             avatar_color: string
+            created_at: string
+            status?: string
           }
         }
       }
@@ -67,4 +82,12 @@ export interface MessageDraft {
 export interface ChatInputProps {
   onSendMessage: (text: string, attachments?: Attachment[]) => void
   isLoading?: boolean
+}
+
+export interface UserProfile {
+  user_id: string
+  username: string
+  avatar_color: string
+  created_at: string
+  status?: string
 } 

@@ -3,39 +3,38 @@ import { useTranslation } from 'next-i18next'
 import { User, ColorOption } from './types'
 
 interface UserInfoProps {
+  className?: string
   user: User
   avatarColor: string
-  onAvatarColorChange: (color: string) => void
-  onUsernameChange: (username: string) => void
   colorOptions: ColorOption[]
   onClose: () => void
-  className?: string
-  onSave: (newUsername: string, newAvatarColor: string) => void
+  onSave: (newUsername: string, newAvatarColor: string) => Promise<void>
+  onAvatarColorChange: (color: string) => void
+  onUsernameChange: (username: string) => void
 }
 
 export default function UserInfo({
   user,
   avatarColor,
-  onAvatarColorChange,
-  onUsernameChange,
   colorOptions,
   onClose,
   className = '',
-  onSave
+  onSave,
+  onAvatarColorChange,
+  onUsernameChange
 }: UserInfoProps) {
   const { t } = useTranslation('common')
   const [tempUsername, setTempUsername] = useState(user.username)
   const [tempAvatarColor, setTempAvatarColor] = useState(avatarColor)
 
-  // Update temp states when props change
-  useEffect(() => {
-    setTempUsername(user.username)
-    setTempAvatarColor(avatarColor)
-  }, [user.username, avatarColor])
-
-  const handleSave = () => {
-    onSave(tempUsername, tempAvatarColor)
-    onClose()
+  const formatDate = (date: string | undefined) => {
+    if (!date) return '';
+    try {
+      return new Date(date).toLocaleDateString()
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return '';
+    }
   }
 
   return (
@@ -54,6 +53,23 @@ export default function UserInfo({
               </svg>
             </button>
           </div>
+
+          {/* Avatar Preview */}
+          <div className="flex justify-center mb-6">
+            <div 
+              className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-bold"
+              style={{ backgroundColor: tempAvatarColor }}
+            >
+              {tempUsername.charAt(0).toUpperCase()}
+            </div>
+          </div>
+
+          {/* Member Since - only show if created_at exists */}
+          {user.created_at && (
+            <div className="text-center mb-6 text-sm text-[var(--text-secondary)]">
+              {t('memberSince')}: {formatDate(user.created_at)}
+            </div>
+          )}
 
           {/* Username Input */}
           <div className="mb-6">
@@ -91,7 +107,7 @@ export default function UserInfo({
           {/* Save Button */}
           <div className="mt-6">
             <button
-              onClick={handleSave}
+              onClick={() => onSave(tempUsername, tempAvatarColor)}
               className="w-full py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
             >
               {t('saveSettings')}

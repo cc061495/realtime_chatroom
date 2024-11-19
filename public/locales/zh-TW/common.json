@@ -58,7 +58,7 @@
   "rememberMe": "記住我",
   "loginWith": "使用其他方式登入",
   "registerWith": "使用其他方式註冊",
-  "agreeToTerms": "註冊即示您同意我們的條款和隱私政策",
+  "agreeToTerms": "註冊即示您同意我們的條款隱私政策",
   "passwordConfirm": "確認密碼",
   "passwordsNotMatch": "密碼不符",
   "saveSettings": "儲存",
@@ -68,8 +68,7 @@
   "usernameTooShort": "使用者名稱至少需要3個字元",
   "invalidPassword": "密碼至少需要6個字元",
   "databaseError": "資料庫錯誤，請重試",
-  "userSettings": "使用者",
-  "systemSettings": "系統",
+  "userSettings": "用戶設置",
   "theme": "主題",
   "light": "明亮",
   "dark": "深色",
@@ -82,5 +81,8 @@
   "confirmDelete": "確定要刪除此訊息嗎？",
   "delete": "刪除",
   "videoNotSupported": "您的瀏覽器不支持視頻播放",
-  "audioNotSupported": "您的瀏覽器不支持音頻播放"
+  "audioNotSupported": "您的瀏覽器不支持音頻播放",
+  "memberSince": "註冊時間",
+  "online": "在線",
+  "busy": "忙碌"
 } 

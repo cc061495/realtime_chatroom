@@ -2,9 +2,16 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useTranslation } from 'next-i18next'
 import { useRouter } from 'next/router'
+import { useTheme } from 'next-themes'
 
 interface LoginProps {
   onLogin: (user: { id: string; email: string; username: string; avatarColor?: string }) => void
+}
+
+// Add these SVG path constants at the top of the file
+const THEME_ICONS = {
+  light: "M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z",
+  dark: "M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
 }
 
 export default function Login({ onLogin }: LoginProps) {
@@ -16,25 +23,7 @@ export default function Login({ onLogin }: LoginProps) {
   const [username, setUsername] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme')
-      if (savedTheme === 'dark' || savedTheme === 'light') {
-        return savedTheme
-      }
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return 'dark'
-      }
-    }
-    return 'dark'
-  })
-
-  useEffect(() => {
-    document.documentElement.classList.remove('dark', 'light')
-    document.documentElement.classList.add(theme)
-    localStorage.setItem('theme', theme)
-  }, [theme])
+  const { theme, setTheme } = useTheme()
 
   const changeLanguage = async (lng: string) => {
     await router.push(router.pathname, router.pathname, { locale: lng })
@@ -178,7 +167,7 @@ export default function Login({ onLogin }: LoginProps) {
           })
 
           // Add this line to force a page refresh after successful login
-          window.location.href = '/'
+          router.push('/')
         }
       }
     } catch (err: any) {
@@ -207,27 +196,26 @@ export default function Login({ onLogin }: LoginProps) {
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 bg-[var(--bg-primary)] text-[var(--text-primary)]`}>
       <div className="max-w-md w-full space-y-8 p-8 rounded-lg shadow-lg bg-[var(--bg-secondary)] border border-[var(--border-color)]">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center">          
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-full hover:bg-[var(--hover-bg)] transition-colors"
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="p-2 rounded-lg hover:bg-[var(--hover-bg)] text-[var(--text-secondary)]"
+            aria-label={theme === 'dark' ? t('lightMode') : t('darkMode')}
           >
-            {theme === 'dark' ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                />
-              </svg>
-            )}
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d={theme === 'dark' ? THEME_ICONS.light : THEME_ICONS.dark}
+              />
+            </svg>
           </button>
-
           <select
             onChange={(e) => changeLanguage(e.target.value)}
             value={router.locale}

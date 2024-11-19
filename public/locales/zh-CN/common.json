@@ -68,8 +68,7 @@
   "usernameTooShort": "用户名至少需要3个字符",
   "invalidPassword": "密码至少需要6个字符",
   "databaseError": "数据库错误，请重试",
-  "userSettings": "用户",
-  "systemSettings": "系统",
+  "userSettings": "用户设置",
   "theme": "主题",
   "light": "明亮",
   "dark": "深色",
@@ -82,5 +81,8 @@
   "confirmDelete": "确定要删除此消息吗？",
   "delete": "删除",
   "videoNotSupported": "您的浏览器不支持视频播放",
-  "audioNotSupported": "您的浏览器不支持音频播放"
+  "audioNotSupported": "您的浏览器不支持音频播放",
+  "memberSince": "注册时间",
+  "online": "在线",
+  "busy": "忙碌"
 } 
