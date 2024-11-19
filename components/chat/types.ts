@@ -1,7 +1,7 @@
 export interface OnlineUser {
   username: string
   user_id?: string
-  status: 'online' | 'typing' | 'away' | 'busy'
+  status: 'online' | 'typing' | 'away'
   lastActive: number
   avatarColor: string
   created_at?: string
@@ -13,7 +13,7 @@ export interface User {
   created_at: string
   email: string
   avatarColor?: string
-  status?: "online" | "typing" | "away" | "busy"
+  status?: "online" | "typing" | "away"
 }
 
 export interface Message {

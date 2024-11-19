@@ -23,7 +23,6 @@ export default function RightSidebar({
   const { t } = useTranslation('common')
   const [selectedUser, setSelectedUser] = useState<OnlineUser | null>(null)
 
-  // Calculate total online users (including current user)
   const totalOnlineUsers = onlineUsers.length + 1
 
   return (
@@ -53,7 +52,7 @@ export default function RightSidebar({
                 username: currentUser.username,
                 avatarColor: userAvatarColor,
                 lastActive: lastActivity,
-                status: (currentUser.status as "online" | "typing" | "away" | "busy") || 'online',
+                status: isUserAway(lastActivity) ? 'away' : 'online',
                 created_at: currentUser.created_at
               })}
             >
@@ -64,12 +63,19 @@ export default function RightSidebar({
                 >
                   {currentUser.username.charAt(0).toUpperCase()}
                 </div>
-                <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[var(--bg-secondary)] bg-green-500" />
+                <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[var(--bg-secondary)] ${
+                  isUserAway(lastActivity) ? 'bg-yellow-500' : 'bg-green-500'
+                }`} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-[var(--text-primary)] font-medium truncate">
                   {currentUser.username} <span className="text-[var(--text-secondary)] font-normal">({t('you')})</span>
                 </div>
+                {isUserAway(lastActivity) && (
+                  <div className="text-xs text-[var(--text-secondary)] truncate">
+                    {t('away')}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -78,10 +84,7 @@ export default function RightSidebar({
               <div 
                 key={user.username} 
                 className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--hover-bg)] cursor-pointer transition-colors duration-150"
-                onClick={() => setSelectedUser({
-                  ...user,
-                  created_at: user.created_at
-                })}
+                onClick={() => setSelectedUser(user)}
               >
                 <div className="relative">
                   <div 
@@ -91,19 +94,17 @@ export default function RightSidebar({
                     {user.username.charAt(0).toUpperCase()}
                   </div>
                   <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[var(--bg-secondary)] ${
-                    user.status === 'away' ? 'bg-yellow-500' : 
-                    user.status === 'busy' ? 'bg-red-500' : 'bg-green-500'
+                    isUserAway(user.lastActive) ? 'bg-yellow-500' : 'bg-green-500'
                   }`} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-[var(--text-primary)] font-medium truncate">
                     {user.username}
                   </div>
-                  {user.status !== 'online' && (
+                  {(user.status !== 'online' || isUserAway(user.lastActive)) && (
                     <div className="text-xs text-[var(--text-secondary)] truncate">
-                      {user.status === 'typing' ? t('typing') : 
-                       user.status === 'away' ? t('away') :
-                       user.status === 'busy' ? t('statusBusy') : ''}
+                      {isUserAway(user.lastActive) ? t('away') :
+                       user.status === 'typing' ? t('typing') : ''}
                     </div>
                   )}
                 </div>
