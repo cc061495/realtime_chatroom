@@ -3,6 +3,7 @@ import { Message } from './types'
 import Image from 'next/image'
 import { useState } from 'react'
 import UserProfileModal from './UserProfileModal'
+import YouTubeEmbed from './YouTubeEmbed'
 
 interface MessageProps {
   message: Message
@@ -14,26 +15,26 @@ interface MessageProps {
 
 // Add these helper functions at the top of the file
 function getYoutubeVideoId(url: string): string | null {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/, // Regular youtube URLs
-    /youtube\.com\/embed\/([^&\s]+)/, // Embed URLs
-    /youtube\.com\/v\/([^&\s]+)/, // Another format
-  ];
-
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      return match[1];
+  try {
+    const urlObj = new URL(url);
+    if (!urlObj.hostname.match(/^(www\.)?(youtube\.com|youtu\.be)$/)) {
+      return null;
     }
+    
+    if (urlObj.hostname.includes('youtube.com')) {
+      return urlObj.searchParams.get('v');
+    } else if (urlObj.hostname === 'youtu.be') {
+      return urlObj.pathname.slice(1);
+    }
+  } catch (e) {
+    return null;
   }
   return null;
 }
 
 function convertUrlsToLinks(text: string) {
-  // Regex for matching URLs
-  const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
+  const urlRegex = /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
   
-  // Replace URLs with links directly
   return text.replace(urlRegex, (url) => {
     return `[link]${url}[/link]`;
   }).split(/\[link\]|\[\/link\]/).map((part, i) => {
@@ -46,26 +47,17 @@ function convertUrlsToLinks(text: string) {
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 hover:underline"
+            onClick={(e) => {
+              if (youtubeId) e.preventDefault();
+            }}
           >
             {part}
           </a>
-          {youtubeId && (
-            <div className="mt-2 max-w-[500px]">
-              <div className="relative aspect-video">
-                <iframe
-                  src={`https://www.youtube.com/embed/${youtubeId}`}
-                  title="YouTube video player"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="absolute top-0 left-0 w-full h-full rounded-lg"
-                />
-              </div>
-            </div>
-          )}
+          {youtubeId && <YouTubeEmbed youtubeId={youtubeId} />}
         </span>
       );
     }
-    return part; // Text parts
+    return part;
   });
 }
 

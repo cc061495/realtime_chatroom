@@ -246,7 +246,7 @@ export default function Chatroom() {
 
             const { data: profileData } = await supabase
               .from('user_profiles')
-              .select('username, avatar_color')
+              .select('username, avatar_color, created_at')
               .eq('user_id', payload.new.user_id)
               .single()
 
